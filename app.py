@@ -18,7 +18,7 @@ from pptx import Presentation
 load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = os.getenv("SECRET_KEY", "dev-secret-change-me")
+app.secret_key = os.getenv("SECRET_KEY") or "dev-secret-change-me"
 
 COURSE_MATERIALS = Path(__file__).parent / "course_materials"
 COURSE_MATERIALS.mkdir(exist_ok=True)

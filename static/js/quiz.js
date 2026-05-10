@@ -4,12 +4,27 @@ let currentIndex = 0;
 let userAnswers = {};
 let revealed = {};
 
+async function fetchJSON(url, opts) {
+    const resp = await fetch(url, opts);
+    const text = await resp.text();
+    let data;
+    try {
+        data = JSON.parse(text);
+    } catch (e) {
+        const snippet = text.slice(0, 300).replace(/\s+/g, " ");
+        throw new Error(`Server returned non-JSON (HTTP ${resp.status}). Body starts with: ${snippet}`);
+    }
+    if (!resp.ok) {
+        throw new Error(data.error || `HTTP ${resp.status}`);
+    }
+    return data;
+}
+
 async function pollForResult(taskId) {
     const maxAttempts = 120;  // up to ~4 minutes with 2s intervals
     for (let i = 0; i < maxAttempts; i++) {
         await new Promise(r => setTimeout(r, 2000));
-        const resp = await fetch(`/api/generate/status/${taskId}`);
-        const data = await resp.json();
+        const data = await fetchJSON(`/api/generate/status/${taskId}`);
         if (data.status === "done") return data;
         if (data.status === "error") throw new Error(data.error || "Generation failed.");
         // still pending – keep polling
