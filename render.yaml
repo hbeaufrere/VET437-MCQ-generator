@@ -3,7 +3,7 @@ services:
     name: vet437-mcq-generator
     runtime: python
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --timeout 300 --workers 1 --worker-class gevent --worker-connections 100
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --timeout 300 --workers 1 --threads 8 --worker-class gthread
     envVars:
       - key: SECRET_KEY
         generateValue: true
