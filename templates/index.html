@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VET437 MCQ Practice</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">VET437 MCQ Practice</div>
+    </nav>
+
+    <main class="container">
+        <!-- Setup Panel -->
+        <section class="card" id="setupPanel">
+            <h2>Generate Practice Questions</h2>
+            <p>Questions are generated from your course lecture materials using AI.
+               {% if not doc_count %}No documents loaded — add files to <code>course_materials/</code> and restart the server.{% endif %}</p>
+
+            {% if doc_count %}
+            <form id="quizSetupForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="numQuestions">Number of Questions</label>
+                        <select id="numQuestions" name="num_questions">
+                            <option value="5">5 questions</option>
+                            <option value="10" selected>10 questions</option>
+                            <option value="15">15 questions</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="topicFocus">Topic Focus (optional)</label>
+                        <input type="text" id="topicFocus" name="topic_focus"
+                               placeholder="e.g., psittacine respiratory disease, chelonian reproduction...">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary" id="generateBtn">
+                    Generate Questions
+                </button>
+            </form>
+            {% endif %}
+        </section>
+
+        <!-- Loading Spinner -->
+        <section class="card loading-card" id="loadingPanel" style="display:none;">
+            <div class="spinner"></div>
+            <p>Generating questions from your course materials...</p>
+            <p class="text-muted">This may take 1-2 minutes. Please be patient!</p>
+        </section>
+
+        <!-- Quiz Panel -->
+        <section id="quizPanel" style="display:none;">
+            <div class="quiz-header">
+                <h2>Practice Quiz</h2>
+                <div class="quiz-progress">
+                    Question <span id="currentQ">1</span> of <span id="totalQ">0</span>
+                </div>
+            </div>
+
+            <div id="quizInfo" class="quiz-info" style="display:none;"></div>
+
+            <div class="progress-bar-container">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+
+            <div class="card question-card" id="questionCard">
+                <div class="question-number" id="questionNumber">Question 1</div>
+                <p class="question-text" id="questionText"></p>
+
+                <div class="options-list" id="optionsList"></div>
+
+                <div class="explanation-box" id="explanationBox" style="display:none;">
+                    <strong>Explanation:</strong>
+                    <p id="explanationText"></p>
+                </div>
+
+                <div class="question-actions">
+                    <button class="btn btn-secondary" id="prevBtn" style="display:none;" onclick="prevQuestion()">Previous</button>
+                    <button class="btn btn-primary" id="nextBtn" style="display:none;" onclick="nextQuestion()">Next</button>
+                    <button class="btn btn-primary" id="finishBtn" style="display:none;" onclick="showResults()">Finish Quiz</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Results Panel -->
+        <section class="card" id="resultsPanel" style="display:none;">
+            <h2>Quiz Results</h2>
+            <div class="score-display">
+                <div class="score-circle" id="scoreCircle">
+                    <span class="score-number" id="scoreNumber">0</span>
+                    <span class="score-total">/ <span id="scoreDenom">0</span></span>
+                </div>
+                <p class="score-percent" id="scorePercent">0%</p>
+            </div>
+
+            <div id="reviewSection" class="review-section"></div>
+
+            <div class="results-actions">
+                <button class="btn btn-secondary" onclick="downloadPDF()">Download PDF</button>
+                <button class="btn btn-primary" onclick="resetQuiz()">Generate New Quiz</button>
+            </div>
+        </section>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <script src="{{ url_for('static', filename='js/quiz.js') }}"></script>
+</body>
+</html>
