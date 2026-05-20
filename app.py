@@ -310,27 +310,44 @@ Return ONLY the JSON array, no other text.
 {text_content}
 """
 
-    message = client.messages.create(
+    message_params = dict(
         model="claude-sonnet-4-6",
-        max_tokens=4096,
-        messages=[{"role": "user", "content": prompt}],
+        max_tokens=8192,
+        messages=[
+            {"role": "user", "content": prompt},
+            {"role": "assistant", "content": "["},
+        ],
     )
 
-    response_text = message.content[0].text.strip()
+    last_error = None
+    for attempt in range(3):
+        message = client.messages.create(**message_params)
 
-    # Calculate cost (Sonnet 4.6: $3/M input, $15/M output)
-    input_tokens = message.usage.input_tokens
-    output_tokens = message.usage.output_tokens
-    cost = (input_tokens / 1_000_000) * 3.0 + (output_tokens / 1_000_000) * 15.0
+        # Calculate cost (Sonnet 4.6: $3/M input, $15/M output)
+        input_tokens = message.usage.input_tokens
+        output_tokens = message.usage.output_tokens
+        cost = (input_tokens / 1_000_000) * 3.0 + (output_tokens / 1_000_000) * 15.0
 
-    # Extract JSON from response – handle markdown code blocks and preamble
-    # Find the first '[' and last ']' to extract the JSON array
-    start = response_text.find("[")
-    end = response_text.rfind("]")
-    if start != -1 and end != -1 and end > start:
-        response_text = response_text[start:end + 1]
+        # Prefilling the assistant turn with "[" forces the reply to begin with
+        # the JSON array (no preamble), so prepend it back before parsing.
+        response_text = "[" + message.content[0].text
 
-    return json.loads(response_text), cost
+        # Extract the JSON array, tolerating any trailing code fence or prose.
+        start = response_text.find("[")
+        end = response_text.rfind("]")
+        if start != -1 and end != -1 and end > start:
+            try:
+                return json.loads(response_text[start:end + 1]), cost
+            except json.JSONDecodeError as e:
+                last_error = e
+                print(f"MCQ parse attempt {attempt + 1}/3 failed: {e}; "
+                      f"stop_reason={message.stop_reason}; tail={response_text[-160:]!r}")
+        else:
+            last_error = json.JSONDecodeError("No JSON array in response", response_text or "", 0)
+            print(f"MCQ parse attempt {attempt + 1}/3: no array found; "
+                  f"stop_reason={message.stop_reason}; head={response_text[:160]!r}")
+
+    raise last_error
 
 # ---------------------------------------------------------------------------
 # Routes
