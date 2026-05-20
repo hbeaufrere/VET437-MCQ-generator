@@ -313,10 +313,7 @@ Return ONLY the JSON array, no other text.
     message_params = dict(
         model="claude-sonnet-4-6",
         max_tokens=8192,
-        messages=[
-            {"role": "user", "content": prompt},
-            {"role": "assistant", "content": "["},
-        ],
+        messages=[{"role": "user", "content": prompt}],
     )
 
     last_error = None
@@ -328,11 +325,9 @@ Return ONLY the JSON array, no other text.
         output_tokens = message.usage.output_tokens
         cost = (input_tokens / 1_000_000) * 3.0 + (output_tokens / 1_000_000) * 15.0
 
-        # Prefilling the assistant turn with "[" forces the reply to begin with
-        # the JSON array (no preamble), so prepend it back before parsing.
-        response_text = "[" + message.content[0].text
+        response_text = message.content[0].text.strip()
 
-        # Extract the JSON array, tolerating any trailing code fence or prose.
+        # Extract the JSON array, tolerating any preamble or ```json fence.
         start = response_text.find("[")
         end = response_text.rfind("]")
         if start != -1 and end != -1 and end > start:
